@@ -44,7 +44,7 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({ onSuccess, onBac
     e?.preventDefault();
 
     const normalizedEmail = email.trim().toLowerCase();
-    if (!normalizedEmail || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(normalizedEmail)) {
+    if (!normalizedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
       setErrorMessage('Masukkan format alamat surel yang valid.');
       return;
     }
@@ -96,7 +96,7 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({ onSuccess, onBac
         setMessage(
           'Kode OTP mungkin sudah dikirim dari permintaan sebelumnya. Periksa email dan masukkan kode yang masih berlaku.'
         );
-        const secondsMatch = backendMessage.match(/(\\d+)\\s*(?:detik|seconds|s)\\b/i);
+        const secondsMatch = backendMessage.match(/(\d+)\s*(?:detik|seconds|s)\b/i);
         setCooldown(secondsMatch ? Math.max(1, Number(secondsMatch[1])) : 60);
         setSimulatedOtp(null);
         setMailboxItems(api.getTestMailbox());
