@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+@theme {
+  --color-maroon: #800020;
+  --color-maroon-deep: #590018;
+  --color-maroon-light: #9B1135;
+  --color-forest: #1B3A2F;
+  --color-forest-dark: #122820;
+  --color-gold: #D4A373;
+  --color-gold-light: #E7C9A9;
+  --color-ivory: #F8F3E9;
+  --color-ivory-soft: #F1ECE0;
+  --color-terracotta: #C65D3A;
+  --color-charcoal: #292522;
+  --color-muted-text: #6D675F;
+  --color-border-sand: #E5DED2;
+  --color-border-sand-subtle: #ECE6DB;
+
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-serif: 'Playfair Display', Georgia, serif;
+  --font-display: 'Cinzel', 'Playfair Display', serif;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-ivory);
+    color: var(--color-charcoal);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
+  }
+
+  ::selection {
+    background-color: #800020;
+    color: #F8F3E9;
+  }
+}
+
+/* Cultural decorative linework */
+.batik-pattern {
+  background-image: radial-gradient(circle at 10px 10px, rgba(212, 163, 115, 0.15) 2px, transparent 2px),
+                    radial-gradient(circle at 30px 30px, rgba(128, 0, 32, 0.08) 3px, transparent 3px);
+  background-size: 40px 40px;
+}
+
+.gunungan-watermark {
+  background-image: linear-gradient(135deg, rgba(128, 0, 32, 0.03) 25%, transparent 25%),
+                    linear-gradient(225deg, rgba(128, 0, 32, 0.03) 25%, transparent 25%);
+  background-size: 32px 32px;
+}
+
+/* Mobile app horizontal rail utilities */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.touch-pan-x {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* iOS Safe Area Support */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 1rem);
+}
+

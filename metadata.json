@@ -1,0 +1,6 @@
+{
+  "name": "ADARUPA — Jelajah Budaya Nusantara",
+  "description": "Platform budaya digital untuk menjelajahi film cerita rakyat (Lalakon), sandiwara dan dongeng audio (Gema Swara), permainan tradisional (Gelanggang), dan agenda festival budaya (Pagelaran).",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

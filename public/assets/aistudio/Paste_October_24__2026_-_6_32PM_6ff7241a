@@ -1,0 +1,1286 @@
+# MASTER PROMPT — ADARUPA
+## Jelajah Budaya Nusantara
+### Complete Web Application, UI/UX, Google Apps Script Backend, Google Drive Media Management
+
+Act as a senior full-stack engineer, product designer, UI/UX architect, Google Apps Script specialist, and digital cultural platform developer.
+
+Your task is to design and build a functional, production-oriented, mobile-first web application named **ADARUPA — Jelajah Budaya Nusantara**.
+
+ADARUPA is a digital cultural platform for discovering Indonesian folklore films, audio storytelling, traditional games, and cultural events. It must be visually distinctive, easy to use, responsive across devices, accessible to a broad audience, and manageable by administrators without manually editing source code every time new content is published.
+
+Do not build only a landing page or static prototype. Build the application as a structured, extensible product with functional navigation, reusable components, working user interactions, clear backend integration contracts, and an administrator content management system.
+
+---
+
+# 1. PRODUCT IDENTITY
+
+Official application name: ADARUPA
+
+Official descriptor: Jelajah Budaya Nusantara
+
+Brand tagline: Cerita yang Hidup, Budaya yang Terhubung.
+
+Primary purpose:
+- Preserve and introduce Indonesian cultural heritage through digital media.
+- Provide public access to films, audio stories, traditional games, and cultural event information.
+- Allow administrators to manage media and cultural information through a centralized dashboard.
+- Make Indonesian cultural content easy to discover by title, category, region, and content type.
+
+Target users:
+- Indonesian families and children.
+- Students, teachers, and educational communities.
+- Cultural organizations and local communities.
+- People interested in Indonesian folklore and traditional arts.
+- Visitors looking for cultural events.
+- Administrators responsible for publishing and maintaining the content library.
+
+Product principles:
+1. Public content can be accessed without login.
+2. Administrator access requires email-based OTP authentication.
+3. The interface is mobile-first and responsive.
+4. Content is displayed primarily through attractive grid cards.
+5. Google Drive stores media assets.
+6. Google Sheets stores structured application metadata.
+7. Google Apps Script is the backend and business logic layer.
+8. Published content must come from real backend data, not hardcoded mock content.
+9. All user-facing text must be in natural Indonesian.
+10. All major interactive controls must have a defined and functional behavior.
+
+# 2. OFFICIAL CONTENT CATEGORIES
+
+Use exactly these four main categories throughout the application. Do not rename, replace, or add another primary category without explicit authorization.
+
+## A. LALAKON
+
+Purpose: Films and visual storytelling about Indonesian culture.
+
+Suggested subcategories:
+- Cerita Rakyat
+- Legenda Nusantara
+- Animasi Nusantara
+- Film Pendek
+- Dokumenter Budaya
+- Seni Pertunjukan
+
+Content examples include folklore adaptations, regional legends, cultural documentaries, traditional performances, and educational films.
+
+Primary media type: video.
+
+## B. GEMA SWARA
+
+Purpose: Audio-based storytelling, spoken content, and cultural sound experiences.
+
+Suggested subcategories:
+- Dongeng Audio
+- Sandiwara Radio
+- Podcast Nusantara
+- Kisah Sejarah
+- Musik dan Suara Tradisi
+
+This category combines audio fairy tales, oral storytelling, radio dramas, podcasts, and cultural audio recordings.
+
+Do not create separate primary categories for podcasts and radio dramas. They belong under Gema Swara.
+
+Primary media type: audio.
+
+For serialized radio dramas and episodic podcasts, support series metadata, episode ordering, episode lists, and navigation between episodes.
+
+## C. GELANGGANG
+
+Purpose: Traditional Indonesian games and practical learning content.
+
+Suggested subcategories:
+- Permainan Papan
+- Permainan Kelompok
+- Permainan Ketangkasan
+- Permainan Strategi
+- Permainan Daerah
+
+Each tutorial should support:
+- Game name.
+- Origin region.
+- Description.
+- Equipment and materials.
+- Number of players.
+- Playing instructions.
+- Rules.
+- Safety considerations where relevant.
+- Tutorial video.
+- Related games.
+
+Examples include congklak, egrang, engklek, and gobak sodor.
+
+Primary media type: video, with optional supporting images and text.
+
+## D. PAGELARAN
+
+Purpose: Cultural events and activities taking place across Indonesia.
+
+Suggested subcategories:
+- Festival Budaya
+- Pertunjukan Seni
+- Pameran Budaya
+- Upacara Adat
+- Lokakarya dan Edukasi
+
+Every event should support:
+- Event title.
+- Poster or banner.
+- Description.
+- Event category.
+- Province, city, or regency.
+- Venue and full address.
+- Start and end dates.
+- Start and end times.
+- Organizer.
+- Registration or ticket URL, when applicable.
+- Official information source.
+- Publication status.
+- Verification status.
+
+Event statuses must be calculated or validated using event dates and publication rules, with appropriate handling for upcoming, ongoing, completed, postponed, and canceled events.
+
+Never fabricate actual event dates, venues, registration links, or organizer details.
+
+# 3. BRANDING AND VISUAL DESIGN
+
+Create a distinctive visual identity called "Modern Nusantara Editorial."
+
+The visual direction should feel:
+- Contemporary.
+- Culturally rooted.
+- Elegant.
+- Warm and welcoming.
+- Editorial and cinematic.
+- Suitable for families and educational communities.
+- Professional without looking like a government administration portal.
+
+## Official color palette
+
+Use the following colors as the initial design tokens:
+
+Primary maroon: #800020
+Deep maroon: #590018
+Forest green: #1B3A2F
+Warm gold: #D4A373
+Ivory background: #F8F3E9
+Terracotta accent: #C65D3A
+Primary text: #292522
+Secondary text: #6D675F
+Border color: #E5DED2
+White: #FFFFFF
+
+The maroon color is the dominant brand identity and must complement the existing maroon ADARUPA logo.
+
+Use ivory for primary light-mode surfaces, forest green and deep maroon for selected emphasis, and warm gold for restrained highlights.
+
+Do not apply every brand color to every component. Establish a consistent hierarchy:
+- Maroon: brand identity, primary actions, selected navigation.
+- Ivory: page backgrounds.
+- Forest green: cultural accents and secondary emphasis.
+- Gold: decorative highlights and small emphasis elements.
+- Terracotta: selected event accents and meaningful alerts.
+- Neutral colors: body text, dividers, and secondary UI elements.
+
+## Cultural patterns
+
+Use subtle Indonesian-inspired ornamental elements:
+- Simplified gunungan-inspired geometry.
+- Restrained batik kawung patterns.
+- Subtle traditional textile-inspired linework.
+- Carefully selected cultural illustrations.
+
+Use patterns primarily in hero sections, empty states, promotional banners, and selected decorative areas.
+
+Do not place dense batik patterns behind body text or every content card. The content artwork must remain the main visual focus.
+
+If the supplied ADARUPA logo is available, use the actual logo asset rather than generating a replacement. Preserve its proportions, color, and transparent background. Do not redraw or distort the logo.
+
+## Typography
+
+Use a modern, highly readable sans-serif typeface such as Plus Jakarta Sans or another suitable open-source font.
+
+Use:
+- Clear heading hierarchy.
+- Comfortable body text.
+- Readable metadata.
+- Consistent spacing.
+- Proper Indonesian spelling and capitalization.
+
+Avoid excessively decorative typography.
+
+## Visual style
+
+Prefer:
+- Rounded cards with restrained corner radii.
+- Clean spacing.
+- High-quality editorial imagery.
+- Consistent aspect ratios.
+- Soft shadows only where useful.
+- Smooth but restrained transitions.
+- Clear focus and hover states.
+- High text contrast.
+
+Avoid:
+- Excessive glassmorphism.
+- Overuse of gradients.
+- Oversized empty sections.
+- Unnecessary animations.
+- Generic dashboard aesthetics on public pages.
+- Randomly changing colors between screens.
+
+# 4. APPLICATION ARCHITECTURE
+
+Build the application using a clear separation between frontend, backend services, and data storage.
+
+Recommended frontend:
+- React.
+- TypeScript.
+- Vite or the appropriate supported build environment.
+- Modular, reusable UI components.
+- Responsive CSS or a suitable styling system.
+- Accessible HTML semantics.
+
+Backend:
+- Google Apps Script Web App.
+- Google Sheets for metadata.
+- Google Drive for media and image assets.
+- MailApp or another approved email delivery mechanism for administrator OTP.
+
+The frontend and GAS backend must be separate logical modules.
+
+Recommended project organization:
+
+src/
+  app/
+  components/
+    layout/
+    navigation/
+    cards/
+    media-player/
+    forms/
+    feedback/
+  pages/
+    HomePage
+    LalakonPage
+    GemaSwaraPage
+    GelanggangPage
+    PagelaranPage
+    ContentDetailPage
+    EventDetailPage
+    AdminLoginPage
+    AdminDashboardPage
+    AdminContentPage
+    AdminMediaPage
+    AdminEventsPage
+    AdminSettingsPage
+  services/
+    apiClient
+    contentService
+    mediaService
+    eventService
+    authService
+  hooks/
+  types/
+  utils/
+  styles/
+
+gas-backend/
+  Main.gs
+  Router.gs
+  ContentService.gs
+  EventService.gs
+  MediaService.gs
+  AuthService.gs
+  CategoryService.gs
+  SettingsService.gs
+  Validation.gs
+  Utilities.gs
+
+The exact file structure may be adjusted to fit the environment, but the separation of concerns must remain clear.
+
+Do not expose server secrets in frontend code.
+
+Do not put the entire application into one large React component or one monolithic GAS function.
+
+# 5. PUBLIC NAVIGATION
+
+The public website must work without login.
+
+Desktop navigation:
+- ADARUPA logo.
+- Beranda.
+- Lalakon.
+- Gema Swara.
+- Gelanggang.
+- Pagelaran.
+- Search control.
+- Optional theme toggle.
+
+Mobile navigation:
+- Beranda.
+- Lalakon.
+- Gema Swara.
+- Gelanggang.
+- Pagelaran.
+
+Use a compact bottom navigation bar on mobile. Provide clear active states, accessible icons, labels, and sufficient touch targets.
+
+Place search prominently in the header or hero section.
+
+Do not expose the administrator dashboard as a primary public navigation item. An administrator can access the admin login page through a dedicated route.
+
+Suggested routes:
+- /
+- /lalakon
+- /gema-swara
+- /gelanggang
+- /pagelaran
+- /konten/:slug
+- /pagelaran/:slug
+- /admin/login
+- /admin/dashboard
+- /admin/konten
+- /admin/media
+- /admin/pagelaran
+- /admin/kategori
+- /admin/pengaturan
+
+Use consistent route handling and appropriate not-found pages.
+
+# 6. HOMEPAGE UI/UX
+
+Create a complete, polished homepage.
+
+## A. Header
+
+Include:
+- ADARUPA logo.
+- Application descriptor, where space permits.
+- Main navigation.
+- Search control.
+- Responsive mobile menu.
+
+The header should be compact and remain usable on small screens.
+
+## B. Hero section
+
+Create an editorial hero area with:
+- A high-quality featured cultural image.
+- An optional small label such as "Pilihan Budaya".
+- Main headline: "Jelajahi Cerita dan Warisan Nusantara".
+- Short supporting description.
+- Primary CTA: "Jelajahi Sekarang".
+- Optional secondary CTA: "Temukan Pagelaran".
+
+Featured content must be selected from actual published backend data.
+
+If no featured content is available, show a designed empty state or a static non-factual brand introduction. Never invent a real film, creator, or event.
+
+## C. Main category cards
+
+Display four prominent cards:
+- Lalakon.
+- Gema Swara.
+- Gelanggang.
+- Pagelaran.
+
+Each card should include:
+- Category illustration or icon.
+- Category name.
+- Short Indonesian description.
+- Clear navigation action.
+
+## D. Featured content
+
+Create horizontally scrollable or responsive grid sections such as:
+- Pilihan Editor.
+- Cerita Pilihan.
+- Dengarkan Sekarang.
+- Jelajahi Permainan.
+- Pagelaran Mendatang.
+- Konten Terbaru.
+
+Only display sections that contain relevant data or appropriate empty states.
+
+## E. Cultural discovery
+
+Add a region-oriented discovery section:
+- Jelajah Berdasarkan Daerah.
+- Selected regional collections.
+- Optional province filters.
+
+Regional data must come from the backend or explicitly configured metadata, not invented counts.
+
+## F. Footer
+
+Include:
+- ADARUPA identity.
+- Application description.
+- Navigation links.
+- Contact information when configured.
+- Privacy policy.
+- Terms of use.
+- Copyright information.
+
+Do not fabricate a physical address, official institution, or contact details.
+
+# 7. CATEGORY PAGES
+
+Each category page must have a consistent layout.
+
+Include:
+- Category heading.
+- Short introduction.
+- Optional featured banner.
+- Search within the category.
+- Subcategory filters.
+- Regional filters.
+- Sorting controls.
+- Responsive content grid.
+- Pagination or load-more behavior.
+- Loading, empty, and error states.
+
+Recommended card layout:
+- Image or poster.
+- Content type badge.
+- Title.
+- Origin region, when available.
+- Duration for video/audio, when available.
+- Brief description.
+- Accessible interaction to open details.
+
+Desktop:
+- Use approximately 3–5 columns depending on available width and card size.
+
+Tablet:
+- Use approximately 2–3 columns.
+
+Mobile:
+- Use 2 columns when cards remain readable.
+- Use 1 column for wide featured cards or content types that need more information.
+
+Avoid excessively small cards.
+
+Use consistent image ratios, preferably 4:3 or 3:2 for general cards, and 16:9 for video-oriented cards.
+
+The number of columns must adapt to viewport width instead of relying on fixed widths.
+
+# 8. MEDIA PLAYER EXPERIENCE
+
+Implement dedicated media detail pages.
+
+## Lalakon video player
+
+Include:
+- Video playback area.
+- Title.
+- Description.
+- Origin region.
+- Duration.
+- Content category.
+- Credits and source information.
+- Related films.
+- Sharing action where supported.
+
+Support standard video controls:
+- Play and pause.
+- Volume.
+- Seek bar.
+- Fullscreen.
+- Playback position.
+- Loading and playback error feedback.
+
+## Gema Swara audio player
+
+Include:
+- Audio cover artwork.
+- Title and series information.
+- Play/pause button.
+- Progress bar.
+- Current time and total duration.
+- Seek controls.
+- Playback speed where supported.
+- Previous and next episode when applicable.
+- Episode list for serialized content.
+
+If background audio playback is supported by the browser, preserve playback while navigating within the application. Do not promise background playback on every mobile browser.
+
+## Gelanggang tutorial detail
+
+Include:
+- Video player.
+- Game title.
+- Origin region.
+- Equipment and materials.
+- Number of players.
+- Rules.
+- Step-by-step instructions.
+- Safety notes.
+- Related tutorials.
+
+## Media source handling
+
+Google Drive is the source of stored media, but a Drive file ID does not automatically guarantee reliable streaming.
+
+Implement a media adapter that distinguishes:
+- Directly playable media URLs.
+- Supported Google Drive preview links.
+- Unsupported or inaccessible media.
+- Private source files.
+- Missing or deleted files.
+
+Do not assume a generic Google Drive download URL will always work as an HTML audio or video source.
+
+Test public access, browser compatibility, playback, seeking, and buffering.
+
+If a source cannot be played directly, show a helpful error state and provide a supported alternative only when appropriate.
+
+Never proxy large media files through GAS.
+
+The architecture must permit a future migration to a dedicated media delivery service without redesigning the entire frontend.
+
+# 9. PAGELARAN EVENT SYSTEM
+
+Create a complete cultural event discovery experience.
+
+## Event listing page
+
+Include:
+- Featured upcoming event.
+- Upcoming event cards.
+- Calendar view and list view.
+- Search by event title.
+- Filter by province and city.
+- Filter by event category.
+- Date range filter.
+- Event status indicator.
+- Empty and loading states.
+
+## Event detail page
+
+Display:
+- Poster.
+- Event title.
+- Date and time.
+- Venue and address.
+- Region.
+- Organizer.
+- Full description.
+- Official information source.
+- Registration or ticket link, if available.
+- Add-to-calendar action.
+- Share action.
+
+Calendar export should use actual event data and an appropriate calendar file or supported calendar URL.
+
+## Event validity
+
+Do not display expired events as upcoming.
+
+Use a consistent timezone, preferably Asia/Jakarta as the application default, while allowing event data to represent the correct local time.
+
+Handle:
+- Upcoming events.
+- Ongoing events.
+- Completed events.
+- Postponed events.
+- Canceled events.
+
+The event publication state and verification state must be separate fields.
+
+Never create fictional event data and present it as real.
+
+# 10. ADMIN AUTHENTICATION
+
+Public visitors do not need to log in.
+
+Only authorized administrators use OTP authentication.
+
+Administrator login flow:
+1. Admin opens /admin/login.
+2. Admin enters their email address.
+3. Backend checks whether the email is authorized.
+4. Backend generates a cryptographically secure six-digit OTP.
+5. Backend stores only a protected representation of the OTP and its expiry metadata.
+6. The system sends the OTP through an approved email delivery mechanism.
+7. Admin submits the OTP.
+8. Backend validates the OTP, expiry, attempt limits, and account authorization.
+9. On successful verification, create a time-limited administrator session.
+10. Every privileged backend operation must verify the active session and administrator role.
+
+Security requirements:
+- OTP expires after 10 minutes.
+- OTP can be used only once.
+- Resend cooldown: 60 seconds.
+- Limit verification attempts, for example five attempts per issued code.
+- Rate-limit OTP requests.
+- Avoid revealing whether an arbitrary email address is registered.
+- Revoke or expire sessions appropriately.
+- Never trust a role supplied by the frontend.
+- Never store plaintext OTP codes in persistent storage.
+- Never expose admin credentials or sensitive session secrets in browser logs.
+- Use server-side authorization for all create, update, publish, archive, and delete operations.
+
+Use Script Properties for server configuration and appropriate protected storage for short-lived OTP metadata. CacheService may be used for temporary state but must not be treated as guaranteed durable storage.
+
+Important limitation:
+Google Apps Script email quotas and execution limits must be considered. Implement clear handling for failed email delivery, quota exhaustion, and expired codes.
+
+Do not create a default administrator with a publicly known password or hardcoded OTP.
+
+If no administrator has been configured, show a clear setup requirement rather than inventing credentials.
+
+# 11. ADMIN DASHBOARD
+
+Create a separate, responsive administration interface.
+
+Use a professional light interface with the same ADARUPA brand colors.
+
+## Dashboard overview
+
+Display:
+- Total published content.
+- Total drafts.
+- Total media assets.
+- Upcoming cultural events.
+- Content requiring review.
+- Recent administrator activity.
+
+These metrics must come from backend data. Do not display fabricated statistics.
+
+## Content management
+
+Administrators must be able to:
+- Create content.
+- Edit content.
+- Preview content.
+- Save drafts.
+- Publish content.
+- Unpublish content.
+- Archive content.
+- Restore archived content.
+- Delete metadata after confirmation.
+- Select the relevant category and subcategory.
+- Associate media from Google Drive.
+- Add a cover image.
+- Add descriptions and metadata.
+- Manage featured content.
+
+Deletion of metadata must not automatically delete the original Drive file unless an explicit, authorized file deletion workflow is implemented.
+
+## Media library
+
+Create a media management interface that supports:
+- Selecting existing Drive files.
+- Associating files with content records.
+- Recording file IDs.
+- Displaying file name and MIME type.
+- Displaying file size when available.
+- Showing access or availability status.
+- Detecting broken references where feasible.
+- Uploading supported media files when the integration is configured.
+- Separating public media from private source files.
+
+Do not assume the frontend can access every file in an administrator's Drive without an authorized integration.
+
+If Drive upload is not implemented in the current environment, clearly identify the missing integration rather than displaying a fake successful upload.
+
+## Pagelaran management
+
+Administrators must be able to:
+- Create and edit events.
+- Upload or select posters.
+- Set event dates and locations.
+- Add official source URLs.
+- Record organizer information.
+- Set verification status.
+- Publish or unpublish events.
+- Mark events postponed or canceled.
+- Review submitted event information if submission functionality is enabled.
+
+## Category management
+
+Allow administrators to manage:
+- Category descriptions.
+- Subcategories.
+- Display order.
+- Active or inactive status.
+- Icons or images.
+- Optional featured status.
+
+The four official category names must remain unchanged unless explicitly authorized.
+
+## Settings
+
+Allow configuration of:
+- Brand assets.
+- Homepage banners.
+- Featured content.
+- Display preferences.
+- Contact details.
+- Application metadata.
+
+Keep secrets and sensitive backend configuration outside the public settings interface.
+
+# 12. GOOGLE SHEETS DATA MODEL
+
+Use Google Sheets as the structured metadata source.
+
+Create the following sheets.
+
+## SETTINGS
+Suggested fields:
+- setting_key
+- setting_value
+- updated_at
+
+Store only appropriate non-secret application settings in this sheet.
+
+## CATEGORIES
+Suggested fields:
+- category_id
+- slug
+- name
+- description
+- icon
+- display_order
+- is_active
+
+Seed the official categories:
+- lalakon
+- gema-swara
+- gelanggang
+- pagelaran
+
+## SUBCATEGORIES
+Suggested fields:
+- subcategory_id
+- category_id
+- slug
+- name
+- description
+- display_order
+- is_active
+
+## CONTENT
+Suggested fields:
+- content_id
+- slug
+- title
+- description
+- category_id
+- subcategory_id
+- content_type
+- origin_province
+- origin_city
+- duration_seconds
+- cover_file_id
+- primary_media_asset_id
+- series_id
+- publication_status
+- is_featured
+- published_at
+- created_at
+- updated_at
+
+## MEDIA_ASSETS
+Suggested fields:
+- media_asset_id
+- content_id
+- drive_file_id
+- file_name
+- mime_type
+- file_size
+- asset_role
+- access_classification
+- availability_status
+- created_at
+- updated_at
+
+## SERIES
+Suggested fields:
+- series_id
+- title
+- slug
+- description
+- category_id
+- cover_file_id
+- publication_status
+
+## EPISODES
+Suggested fields:
+- episode_id
+- series_id
+- content_id
+- episode_number
+- title
+- display_order
+
+## EVENTS
+Suggested fields:
+- event_id
+- slug
+- title
+- description
+- category
+- province
+- city
+- venue
+- address
+- start_datetime
+- end_datetime
+- organizer
+- poster_file_id
+- official_source_url
+- registration_url
+- verification_status
+- publication_status
+- event_status
+- created_at
+- updated_at
+
+## ADMINS
+Suggested fields:
+- admin_id
+- email
+- display_name
+- role
+- account_status
+- created_at
+- updated_at
+
+## AUDIT_LOG
+Suggested fields:
+- log_id
+- admin_id
+- action
+- resource_type
+- resource_id
+- timestamp
+- result
+
+Never expose private admin data or audit logs through public endpoints.
+
+Use stable unique IDs, not spreadsheet row numbers as permanent identifiers.
+
+Implement a consistent metadata validation and normalization layer.
+
+Do not create a separate sheet for every subcategory.
+
+# 13. GOOGLE APPS SCRIPT API CONTRACT
+
+Design a consistent API layer for the GAS backend.
+
+Suggested public operations:
+- listCategories
+- listSubcategories
+- listContent
+- getContentBySlug
+- searchContent
+- listFeaturedContent
+- listRelatedContent
+- listEvents
+- getEventBySlug
+- getPublicSettings
+
+Suggested administrator operations:
+- requestAdminOtp
+- verifyAdminOtp
+- validateAdminSession
+- revokeAdminSession
+- createContent
+- updateContent
+- updateContentPublicationStatus
+- archiveContent
+- deleteContentMetadata
+- listMediaAssets
+- associateDriveAsset
+- createEvent
+- updateEvent
+- updateEventPublicationStatus
+- manageCategories
+- getAdminDashboardMetrics
+
+Use a predictable JSON response format:
+
+{
+  "success": true,
+  "data": {},
+  "error": null,
+  "meta": {}
+}
+
+For failures:
+
+{
+  "success": false,
+  "data": null,
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "Pesan yang dapat dipahami pengguna"
+  },
+  "meta": {}
+}
+
+Use pagination for catalog endpoints.
+
+Validate every input on the backend.
+
+Separate public read operations from administrator write operations.
+
+Do not rely on the frontend to hide unpublished content. The backend must filter public results and reject unauthorized operations.
+
+## Deployment and CORS
+
+Google Apps Script Web Apps have specific deployment, authorization, redirect, quota, and cross-origin behavior.
+
+Do not assume that arbitrary browser fetch requests to a GAS URL will work correctly without testing.
+
+Implement an API adapter that isolates transport details from UI components.
+
+Document the exact deployment requirements and test the selected integration approach in the actual target environment.
+
+If the current deployment environment cannot securely or reliably support a required integration, explain the limitation and propose a compatible approach. Do not claim the integration works merely because the code compiles.
+
+# 14. FRONTEND API ADAPTER
+
+Create a central API client.
+
+Requirements:
+- Read the backend endpoint from configuration.
+- Use typed request and response interfaces.
+- Centralize error handling.
+- Support pagination.
+- Handle loading states.
+- Handle empty responses.
+- Handle timeouts and failed requests.
+- Prevent duplicate submissions.
+- Avoid exposing secrets.
+- Make the backend replaceable without rewriting the entire UI.
+
+Provide a clearly defined development mode.
+
+Development mode may use a small set of labeled sample fixtures only when explicitly enabled. It must never silently fall back to fake content in production.
+
+Display an explicit connection status in the admin environment.
+
+If the backend is unavailable, show an honest error message instead of claiming data has been saved or published.
+
+# 15. GOOGLE DRIVE INTEGRATION
+
+Google Drive stores:
+- Film files.
+- Audio files.
+- Tutorial videos.
+- Cover images.
+- Posters.
+- Subtitles and supporting documents.
+
+Suggested folder structure:
+
+ADARUPA_MEDIA/
+  01_LALAKON/
+  02_GEMA_SWARA/
+  03_GELANGGANG/
+  04_PAGELARAN/
+  05_BRANDING/
+
+The actual folder IDs must be configured during deployment. Do not invent folder IDs.
+
+Store Drive file IDs and metadata in Sheets.
+
+Use an appropriate authorized Google Drive integration for file selection and upload. Do not assume that the public frontend can browse private Drive files directly.
+
+For public media:
+- Ensure the intended sharing permissions are correct.
+- Test access without a Google account.
+- Verify that the source can actually be played.
+- Protect unpublished media.
+- Avoid exposing private file URLs.
+- Do not make every source file public merely to simplify playback.
+
+Use a media provider abstraction so a future storage migration does not require changes throughout the UI.
+
+# 16. RESPONSIVE DESIGN REQUIREMENTS
+
+Support:
+- Small mobile screens from approximately 320 pixels wide.
+- Modern Android and iOS phones.
+- Tablets.
+- Desktop and laptop screens.
+- Touch and mouse input.
+- Portrait and landscape orientation.
+
+Requirements:
+- No horizontal page overflow.
+- No overlapping navigation.
+- Consistent card proportions.
+- Responsive image sizing.
+- Proper line wrapping for long Indonesian titles.
+- Readable metadata.
+- Accessible form controls.
+- Keyboard navigation on desktop.
+- Visible focus indicators.
+- Proper semantic headings.
+- Appropriate image alternative text.
+- Reduced-motion support.
+- Accessible color contrast.
+
+Use skeleton loaders where useful, but ensure they are replaced by actual content or appropriate empty/error states.
+
+# 17. SEARCH AND DISCOVERY
+
+Implement unified search across:
+- Content titles.
+- Descriptions.
+- Categories and subcategories.
+- Origin regions.
+- Event titles.
+- Event locations.
+
+Support:
+- Search input.
+- Debounced requests.
+- Clear search.
+- Search results grouped by category when appropriate.
+- No-results state.
+- Loading state.
+- Search error state.
+
+Filters should remain consistent with the current category.
+
+Use only backend-supported search fields.
+
+# 18. PERFORMANCE AND RELIABILITY
+
+Optimize for Indonesian users with varying network quality.
+
+Requirements:
+- Lazy-load offscreen images.
+- Optimize image sizes.
+- Avoid downloading full media files before playback.
+- Use pagination.
+- Cache suitable public metadata.
+- Invalidate or refresh cached data after publication changes.
+- Avoid unnecessary GAS calls.
+- Prevent repeated requests caused by component re-rendering.
+- Keep bundles reasonably small.
+- Provide resilient loading and error states.
+
+Respect Apps Script execution limits and service quotas.
+
+Do not route large media files through GAS.
+
+Do not promise unlimited users, unlimited uploads, or unlimited streaming capacity.
+
+# 19. SECURITY AND DATA INTEGRITY
+
+Implement:
+- Server-side role checks.
+- Input validation.
+- Output encoding where relevant.
+- Rate limiting for OTP and sensitive actions.
+- Session expiry and revocation.
+- Audit logs for privileged actions.
+- Confirmation for destructive operations.
+- Safe handling of external URLs.
+- Validation of file IDs and supported MIME types.
+- Separation between public and private records.
+
+Never:
+- Hardcode administrator passwords.
+- Hardcode OTP codes.
+- Store secrets in frontend source code.
+- Trust a client-supplied administrator role.
+- Return private file IDs or unpublished metadata through public endpoints unnecessarily.
+- Claim successful writes without a confirmed backend response.
+
+A frontend-only admin login screen is not sufficient. All privileged actions must be enforced by the backend.
+
+# 20. ACCESSIBILITY AND CONTENT GOVERNANCE
+
+The application is intended to support broad public access.
+
+Include:
+- Readable text.
+- Keyboard-friendly navigation.
+- Captions or subtitles when available.
+- Transcripts for audio where available.
+- Descriptive content metadata.
+- Clear source and creator credits.
+- Reporting or correction contact information when configured.
+
+Respect copyright and cultural attribution.
+
+Do not assume that traditional cultural material, music, recordings, or modern adaptations are automatically free of copyright restrictions.
+
+Only publish content for which the platform has the appropriate rights or authorization.
+
+# 21. IMPLEMENTATION PHASES
+
+Develop the application incrementally.
+
+## Phase 1: Foundation
+- Establish the project structure.
+- Create design tokens.
+- Implement responsive navigation.
+- Build homepage.
+- Build the four category pages.
+- Build reusable grid cards.
+- Implement detail-page layouts.
+- Add loading, empty, and error states.
+
+## Phase 2: Backend integration
+- Define the Google Sheets schemas.
+- Implement GAS routing and validation.
+- Connect category and content APIs.
+- Implement pagination and search.
+- Connect Google Drive asset references.
+- Verify that real data replaces fixtures.
+
+## Phase 3: Media playback
+- Implement video playback for Lalakon.
+- Implement audio playback for Gema Swara.
+- Implement tutorial playback and instructions for Gelanggang.
+- Test actual media access and playback behavior.
+
+## Phase 4: Pagelaran
+- Implement event listings.
+- Implement calendar and list views.
+- Add location and date filters.
+- Implement event detail pages.
+- Implement event publication and verification in the admin dashboard.
+
+## Phase 5: Administrator
+- Implement email OTP.
+- Implement authorized administrator sessions.
+- Implement content management.
+- Implement media management.
+- Implement event management.
+- Implement category management.
+- Implement audit logging.
+
+## Phase 6: Quality assurance
+- Test public access without login.
+- Test administrator authentication.
+- Test permissions for every privileged operation.
+- Test media playback.
+- Test broken file references.
+- Test mobile responsiveness.
+- Test empty states and failed requests.
+- Test real backend reads and writes.
+- Document deployment and maintenance.
+
+Do not skip foundational architecture to jump directly to decorative UI details.
+
+# 22. REQUIRED DELIVERABLES
+
+Produce the following:
+
+1. A complete runnable frontend application.
+2. A modular and maintainable project structure.
+3. A consistent ADARUPA design system.
+4. Functional responsive public pages.
+5. Working navigation and content cards.
+6. Media detail pages and player components.
+7. Pagelaran listing and detail pages.
+8. An administrator login interface with OTP flow.
+9. An administrator dashboard.
+10. Google Sheets schema and initialization instructions.
+11. Google Apps Script backend source code.
+12. API contract documentation.
+13. Google Drive integration instructions.
+14. Environment and deployment configuration.
+15. Error handling and validation.
+16. A testing checklist.
+17. A README in Indonesian.
+18. A list of features that are implemented, partially implemented, or awaiting external configuration.
+
+Do not merely output a long explanation of what should be built. Implement the project in the available coding environment.
+
+# 23. DEVELOPMENT RULES
+
+Follow these rules throughout development:
+
+- Build incrementally and preserve working functionality.
+- Reuse existing files and components when appropriate.
+- Do not replace working implementations with simplified placeholders.
+- Do not create fake backend success responses.
+- Do not silently substitute mock content for production data.
+- Do not invent Google Drive IDs, API credentials, email addresses, or deployment URLs.
+- Keep all user-facing interface text in Indonesian.
+- Use consistent naming across frontend, backend, and data schemas.
+- Ensure the four category names remain exactly:
+  Lalakon, Gema Swara, Gelanggang, Pagelaran.
+- Ensure the official application name remains ADARUPA.
+- Ensure public viewing requires no login.
+- Ensure only authorized administrators can access privileged management functions.
+- Keep the application compatible with the intended Google AI Studio development environment.
+- If a required capability is unavailable, explain the exact limitation and provide the best supported implementation path.
+
+# 24. ACCEPTANCE CRITERIA
+
+The application is not considered complete merely because it looks attractive.
+
+The initial release must satisfy these criteria:
+
+A. Public experience:
+- Homepage renders correctly on mobile and desktop.
+- All four categories are accessible.
+- Search and filters behave correctly when data is available.
+- Content detail pages work.
+- Public content can be accessed without login.
+- Loading, empty, and error states are implemented.
+
+B. Media:
+- Supported video and audio sources can actually play.
+- Playback failures are handled clearly.
+- Media access permissions are tested.
+- No large media files are proxied through GAS.
+
+C. Pagelaran:
+- Event listings use real backend data.
+- Event details show accurate dates and locations.
+- Expired events are not incorrectly presented as upcoming.
+- Publication and verification states are enforced.
+
+D. Administrator:
+- OTP is generated and verified by the backend.
+- Unauthorized emails cannot gain admin access.
+- OTP expiry and attempt limits work.
+- Protected actions require an authorized session.
+- Create, edit, publish, archive, and delete operations are validated server-side.
+
+E. Data:
+- Google Sheets is the authoritative metadata source.
+- Google Drive is the configured media storage.
+- Production mode does not silently use hardcoded content.
+- Backend errors are visible and understandable.
+- No fake successful writes are reported.
+
+F. Delivery:
+- The project builds successfully.
+- The README documents setup.
+- Required configuration variables are documented.
+- Deployment steps are explicit.
+- Implemented and unimplemented features are clearly distinguished.
+
+# 25. FIRST ACTION
+
+Begin by examining the available project environment and its supported capabilities.
+
+Then:
+1. Establish the project architecture.
+2. Implement the design system and responsive application shell.
+3. Build the public homepage and four category pages.
+4. Implement reusable content cards and detail layouts.
+5. Create the typed API adapter and GAS integration contract.
+6. Build the event system and media-player interfaces.
+7. Implement the administrator experience and secure OTP backend.
+8. Connect actual Google Sheets and Google Drive services.
+9. Test the complete application and document any external setup requirements.
+
+Start implementation immediately. Do not stop after generating a plan or a static mockup.
+
+Prioritize functional correctness, maintainable architecture, authentic Indonesian cultural identity, mobile usability, and honest reporting of integration status.
