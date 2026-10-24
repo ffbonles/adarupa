@@ -21,6 +21,9 @@ interface AdminLoginPageProps {
 export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({ onSuccess, onBackToHome }) => {
   const [step, setStep] = useState<'email' | 'otp'>('email');
   const [email, setEmail] = useState('');
+  // Simpan email yang benar-benar dipakai untuk meminta OTP. Verifikasi harus
+  // menggunakan email yang sama, meskipun input email kemudian berubah.
+  const [otpEmail, setOtpEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -65,6 +68,7 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({ onSuccess, onBac
       // API dapat mengembalikan success=true tanpa objek data. Selama backend
       // mengonfirmasi sukses, jangan menahan pengguna di formulir email.
       if (res?.success === true) {
+        setOtpEmail(normalizedEmail);
         setStep('otp');
         setOtp('');
         setMessage(responseMessage);
@@ -91,6 +95,7 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({ onSuccess, onBac
         );
 
       if (isCooldownResponse) {
+        setOtpEmail(normalizedEmail);
         setStep('otp');
         setOtp('');
         setMessage(
@@ -124,7 +129,13 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({ onSuccess, onBac
     setMessage(null);
 
     try {
-      const res = await api.verifyAdminOtp(email, otp);
+      const emailForVerification = (otpEmail || email).trim().toLowerCase();
+      if (!emailForVerification) {
+        setErrorMessage('Alamat surel administrator tidak tersedia. Silakan kembali dan minta OTP baru.');
+        setStep('email');
+        return;
+      }
+      const res = await api.verifyAdminOtp(emailForVerification, otp);
       if (res.success && res.data) {
         setMessage('Verifikasi berhasil! Mengalihkan ke dasbor...');
         setTimeout(() => {
@@ -227,7 +238,13 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({ onSuccess, onBac
                   </label>
                   <button
                     type="button"
-                    onClick={() => setStep('email')}
+                    onClick={() => {
+                      setStep('email');
+                      setOtp('');
+                      setOtpEmail('');
+                      setMessage(null);
+                      setErrorMessage(null);
+                    }}
                     className="text-[11px] text-[#800020] hover:underline"
                   >
                     Ubah Surel
@@ -246,6 +263,7 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({ onSuccess, onBac
                     className="w-full pl-9 pr-4 py-2.5 text-center tracking-[0.3em] font-mono text-base font-bold bg-[#F8F3E9] border border-[#E5DED2] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#800020]"
                   />
                 </div>
+                <p className="text-[11px] text-[#8E867B]">Masukkan kode yang dikirim ke <strong>{otpEmail || email}</strong>.</p>
                 <div className="flex items-center justify-between text-[11px] text-[#6D675F] pt-1">
                   <span>Masa berlaku: 10 menit</span>
                   {cooldown > 0 ? (
