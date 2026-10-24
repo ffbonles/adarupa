@@ -20,7 +20,7 @@ interface AdminLoginPageProps {
 
 export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({ onSuccess, onBackToHome }) => {
   const [step, setStep] = useState<'email' | 'otp'>('email');
-  const [email, setEmail] = useState('4ghina@gmail.com');
+  const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -40,32 +40,73 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({ onSuccess, onBac
     }
   }, [cooldown]);
 
-  const handleRequestOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || !email.includes('@')) {
+  const handleRequestOtp = async (e?: React.SyntheticEvent) => {
+    e?.preventDefault();
+
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(normalizedEmail)) {
       setErrorMessage('Masukkan format alamat surel yang valid.');
       return;
     }
 
+    setEmail(normalizedEmail);
     setIsLoading(true);
     setErrorMessage(null);
     setMessage(null);
 
     try {
-      const res = await api.requestAdminOtp(email);
-      if (res.success && res.data) {
+      const res: any = await api.requestAdminOtp(normalizedEmail);
+      const responseData = res?.data?.data ?? res?.data ?? {};
+      const responseMessage =
+        responseData?.message ||
+        res?.message ||
+        'Jika alamat surel terdaftar, kode OTP telah dikirim. Periksa kotak masuk dan folder spam.';
+
+      // API dapat mengembalikan success=true tanpa objek data. Selama backend
+      // mengonfirmasi sukses, jangan menahan pengguna di formulir email.
+      if (res?.success === true) {
         setStep('otp');
-        setMessage(res.data.message);
+        setOtp('');
+        setMessage(responseMessage);
         setCooldown(60);
-        if (res.data.simulated_otp) {
-          setSimulatedOtp(res.data.simulated_otp);
-        }
+        setSimulatedOtp(
+          typeof responseData?.simulated_otp === 'string'
+            ? responseData.simulated_otp
+            : null
+        );
+        setMailboxItems(api.getTestMailbox());
+        return;
+      }
+
+      const backendMessage = String(
+        res?.error?.message || responseData?.message || res?.message || ''
+      );
+      const normalizedMessage = backendMessage.toLowerCase();
+
+      // Jika pengguna mengirim permintaan ulang saat cooldown aktif, OTP dari
+      // permintaan sebelumnya mungkin sudah terkirim. Tetap tampilkan form OTP.
+      const isCooldownResponse =
+        /cooldown|rate.?limit|tunggu|detik sebelum|too many requests|coba lagi dalam/.test(
+          normalizedMessage
+        );
+
+      if (isCooldownResponse) {
+        setStep('otp');
+        setOtp('');
+        setMessage(
+          'Kode OTP mungkin sudah dikirim dari permintaan sebelumnya. Periksa email dan masukkan kode yang masih berlaku.'
+        );
+        const secondsMatch = backendMessage.match(/(\\d+)\\s*(?:detik|seconds|s)\\b/i);
+        setCooldown(secondsMatch ? Math.max(1, Number(secondsMatch[1])) : 60);
+        setSimulatedOtp(null);
         setMailboxItems(api.getTestMailbox());
       } else {
-        setErrorMessage(res.error?.message || 'Permintaan kode OTP gagal.');
+        setErrorMessage(
+          backendMessage || 'Permintaan kode OTP gagal. Periksa email administrator dan konfigurasi GAS.'
+        );
       }
     } catch (err: any) {
-      setErrorMessage(err.message || 'Koneksi ke backend gagal.');
+      setErrorMessage(err?.message || 'Koneksi ke backend gagal.');
     } finally {
       setIsLoading(false);
     }
