@@ -467,7 +467,7 @@ class ApiClient {
       const expiresRaw = backendSession.expiresAt ?? backendSession.expires_at;
       let expiresAt: string;
 
-      if (typeof expiresRaw === 'number' || (typeof expiresRaw === 'string' && /^\\d+$/.test(expiresRaw))) {
+      if (typeof expiresRaw === 'number' || (typeof expiresRaw === 'string' && /^\d+$/.test(expiresRaw))) {
         expiresAt = new Date(Number(expiresRaw)).toISOString();
       } else if (typeof expiresRaw === 'string' && expiresRaw.trim()) {
         expiresAt = new Date(expiresRaw).toISOString();
