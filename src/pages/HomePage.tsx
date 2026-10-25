@@ -9,6 +9,7 @@ import {
   Compass,
   Sparkles,
   ChevronRight,
+  ChevronLeft,
   MapPin
 } from 'lucide-react';
 import { ContentCard } from '../components/cards/ContentCard';
@@ -23,6 +24,41 @@ interface HomePageProps {
   onSelectContent: (slug: string) => void;
   onSelectEvent: (slug: string) => void;
   onPlayAudioTrack?: (item: ContentItem) => void;
+}
+
+/**
+ * Turn Google Drive sharing links (including Markdown links stored in Sheets)
+ * into image URLs usable by an <img>. The file must be publicly viewable.
+ */
+function getHeroImageCandidates(raw?: string): string[] {
+  if (!raw || typeof raw !== 'string') return [];
+  let url = raw.trim();
+  const markdown = url.match(/^\[([^\]]*)\]\((https?:\/\/[^)]+)\)$/i);
+  if (markdown) url = markdown[2].trim();
+  url = url.replace(/^["']|["']$/g, '').trim();
+  if (!/^https?:\/\//i.test(url)) return [];
+
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname === 'drive.google.com' || parsed.hostname.endsWith('.drive.google.com')) {
+      const id =
+        parsed.pathname.match(/\/file\/d\/([^/]+)/i)?.[1] ||
+        parsed.pathname.match(/\/d\/([^/]+)/i)?.[1] ||
+        parsed.searchParams.get('id');
+      if (id) {
+        const encoded = encodeURIComponent(id);
+        return [
+          `https://drive.google.com/thumbnail?id=${encoded}&sz=w1600`,
+          `https://drive.google.com/uc?export=view&id=${encoded}`,
+          `https://drive.google.com/uc?export=download&id=${encoded}`,
+          url
+        ];
+      }
+    }
+  } catch {
+    return [];
+  }
+  return [url];
 }
 
 export const HomePage: React.FC<HomePageProps> = ({
@@ -42,6 +78,8 @@ export const HomePage: React.FC<HomePageProps> = ({
   const [upcomingEvents, setUpcomingEvents] = useState<CulturalEvent[]>([]);
   const [selectedRegion, setSelectedRegion] = useState<string>('all');
   const [isLoading, setIsLoading] = useState(true);
+  const [activeFeaturedIndex, setActiveFeaturedIndex] = useState(0);
+  const [heroImageAttempt, setHeroImageAttempt] = useState(0);
 
   useEffect(() => {
     async function loadHomeData() {
@@ -68,7 +106,29 @@ export const HomePage: React.FC<HomePageProps> = ({
     loadHomeData();
   }, []);
 
-  const leadHeroItem = featuredContent.length > 0 ? featuredContent[0] : null;
+  // Rotate through published featured content; the sheet remains the source of truth.
+  useEffect(() => {
+    setActiveFeaturedIndex(0);
+    setHeroImageAttempt(0);
+  }, [featuredContent.length]);
+
+  useEffect(() => {
+    if (featuredContent.length < 2) return;
+    const timer = window.setInterval(() => {
+      setActiveFeaturedIndex((index) => (index + 1) % featuredContent.length);
+      setHeroImageAttempt(0);
+    }, 7000);
+    return () => window.clearInterval(timer);
+  }, [featuredContent.length]);
+
+  const leadHeroItem = featuredContent.length > 0
+    ? featuredContent[activeFeaturedIndex % featuredContent.length]
+    : null;
+  const heroImageCandidates = [
+    ...getHeroImageCandidates(leadHeroItem?.cover_url),
+    ...getHeroImageCandidates(hero.bannerImageUrl)
+  ];
+  const heroImageUrl = heroImageCandidates[heroImageAttempt] || '';
 
   const getCategoryIcon = (slug: MainCategorySlug) => {
     switch (slug) {
@@ -101,23 +161,26 @@ export const HomePage: React.FC<HomePageProps> = ({
           1. IMMERSIVE HERO BANNER (STREAMING APP CINEMATIC HERO)
           ========================================================================= */}
       <section className="relative overflow-hidden bg-[#141210] text-white">
-        {/* Cinematic Backdrop Image */}
+        {/* Cinematic Backdrop: cover from featured CONTENT in Google Sheets */}
         <div className="absolute inset-0 z-0">
-          {leadHeroItem?.cover_url || hero.bannerImageUrl ? (
+          {heroImageUrl ? (
             <img
-              src={leadHeroItem?.cover_url || hero.bannerImageUrl}
+              key={`${leadHeroItem?.content_id || 'hero-config'}-${heroImageAttempt}`}
+              src={heroImageUrl}
               alt={leadHeroItem?.title || hero.mainHeadline}
-              className="w-full h-full object-cover object-center opacity-40 scale-105 transition-transform duration-1000"
+              loading={activeFeaturedIndex === 0 ? 'eager' : 'lazy'}
+              referrerPolicy="no-referrer"
+              onError={() => setHeroImageAttempt((attempt) => attempt + 1)}
+              className="w-full h-full object-cover object-center opacity-65 scale-105 transition-opacity duration-700"
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-[#590018] via-[#800020] to-[#122820] opacity-80" />
+            <div className="w-full h-full bg-gradient-to-br from-[#590018] via-[#800020] to-[#122820]" />
           )}
 
-          {/* Gradients for text contrast & bottom fade */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-ivory,#F8F3E9)] via-[#141210]/60 to-black/30" />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#141210]/90 via-[#141210]/40 to-transparent" />
+          {/* Keep text readable without washing out the image at the bottom. */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#141210]/85 via-[#141210]/35 to-[#141210]/25" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#141210]/90 via-[#141210]/55 to-[#141210]/10" />
 
-          {/* Subtle cultural batik linework */}
           {config.theme.enableBatikPatterns && (
             <div className="absolute inset-0 batik-pattern opacity-10 pointer-events-none" />
           )}
@@ -164,6 +227,51 @@ export const HomePage: React.FC<HomePageProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Featured carousel controls */}
+        {featuredContent.length > 1 && (
+          <div className="absolute z-20 bottom-5 right-4 sm:right-8 lg:right-12 flex items-center gap-2">
+            <span className="mr-2 text-[11px] font-medium text-white/80 tabular-nums">
+              {activeFeaturedIndex + 1} / {featuredContent.length}
+            </span>
+            <button
+              type="button"
+              aria-label="Konten unggulan sebelumnya"
+              onClick={() => {
+                setActiveFeaturedIndex((index) => (index - 1 + featuredContent.length) % featuredContent.length);
+                setHeroImageAttempt(0);
+              }}
+              className="w-9 h-9 rounded-full border border-white/30 bg-black/35 text-white backdrop-blur hover:bg-black/60 flex items-center justify-center"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              aria-label="Konten unggulan berikutnya"
+              onClick={() => {
+                setActiveFeaturedIndex((index) => (index + 1) % featuredContent.length);
+                setHeroImageAttempt(0);
+              }}
+              className="w-9 h-9 rounded-full border border-white/30 bg-black/35 text-white backdrop-blur hover:bg-black/60 flex items-center justify-center"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+            <div className="hidden sm:flex items-center gap-1.5 ml-1">
+              {featuredContent.map((item, index) => (
+                <button
+                  key={item.content_id}
+                  type="button"
+                  aria-label={`Tampilkan unggulan ${index + 1}: ${item.title}`}
+                  onClick={() => {
+                    setActiveFeaturedIndex(index);
+                    setHeroImageAttempt(0);
+                  }}
+                  className={`h-1.5 rounded-full transition-all ${index === activeFeaturedIndex ? 'w-6 bg-white' : 'w-1.5 bg-white/45 hover:bg-white/75'}`}
+                />
+              ))}
+            </div>
+          </div>
+        )}
       </section>
 
       {/* =========================================================================
