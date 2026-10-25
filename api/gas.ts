@@ -2,7 +2,8 @@
  * ADARUPA — Vercel server-side proxy for Google Apps Script.
  *
  * Place this file at: /api/gas.ts (project root, not src/api).
- * Configure GAS_API_URL in Vercel Project Settings > Environment Variables.
+ * No Vercel Environment Variable is required; the public GAS Web App URL
+ * is configured directly below.
  *
  * The browser calls its own origin (/api/gas); this function calls GAS server-side,
  * avoiding browser CORS failures caused by Apps Script redirects.
@@ -53,17 +54,9 @@ export default async function handler(req: any, res: any) {
     });
   }
 
-  const gasUrl = process.env.GAS_API_URL;
-  if (!gasUrl || !gasUrl.startsWith('https://script.google.com/macros/s/') || !gasUrl.endsWith('/exec')) {
-    return res.status(500).json({
-      success: false,
-      data: null,
-      error: {
-        code: 'GAS_URL_NOT_CONFIGURED',
-        message: 'Environment variable GAS_API_URL belum diatur di Vercel.'
-      }
-    });
-  }
+  // URL Web App GAS ADARUPA. URL Web App bukan kredensial rahasia.
+  // Jika deployment GAS berubah, perbarui konstanta ini lalu deploy ulang Vercel.
+  const gasUrl = 'https://script.google.com/macros/s/AKfycbx7pX1eaIyyc6GyT1DnfkxLlLttFZrHuZ5QlrouudRfKOcRogGEKyry0kqpYjIvIpBODw/exec';
 
   try {
     const incomingUrl = new URL(req.url || '/', 'https://adarupa.local');
