@@ -42,12 +42,12 @@ class ApiClient {
   private gasUrl: string = '';
 
   constructor() {
-    this.initStorage();
-    // Prioritas: URL yang disimpan admin > environment variable Vercel > URL GAS ADARUPA.
-    this.gasUrl =
-      localStorage.getItem(STORAGE_KEYS.GAS_URL) ||
-      (import.meta as any).env?.VITE_GAS_API_URL ||
-      'https://script.google.com/macros/s/AKfycbx7pX1eaIyyc6GyT1DnfkxLlLttFZrHuZ5QlrouudRfKOcRogGEKyry0kqpYjIvIpBODw/exec';
+    // Browser hanya memanggil endpoint same-origin Vercel (/api/gas).
+    // URL GAS asli disimpan sebagai environment variable server GAS_API_URL.
+    this.gasUrl = '/api/gas';
+
+    // Sengaja tidak menjalankan initStorage(). Frontend tidak membuat atau
+    // mengisi database konten dummy di localStorage.
   }
 
   private initStorage() {
@@ -109,12 +109,19 @@ class ApiClient {
   }
 
   public setGasUrl(url: string): void {
-    this.gasUrl = url.trim();
-    localStorage.setItem(STORAGE_KEYS.GAS_URL, this.gasUrl);
+    // URL GAS dikelola di Vercel Project Settings, bukan dari browser.
+    // Metode dipertahankan untuk kompatibilitas dengan komponen admin lama.
+    const cleanUrl = url.trim();
+    if (cleanUrl !== '/api/gas' && !cleanUrl.startsWith('https://script.google.com/macros/s/')) {
+      throw new Error('Endpoint backend tidak valid.');
+    }
+    this.gasUrl = '/api/gas';
   }
 
   public isUsingLiveGas(): boolean {
-    return Boolean(this.gasUrl && this.gasUrl.startsWith('https://script.google.com/macros/s/'));
+    // Mode fixture/local dimatikan secara permanen. Jika URL backend salah,
+    // permintaan harus gagal dengan error koneksi—jangan pernah jatuh ke data dummy.
+    return true;
   }
 
   // --- Generic HTTP Transport to Google Apps Script ---
@@ -138,20 +145,19 @@ class ApiClient {
         });
       }
 
-      const separator = this.gasUrl.includes('?') ? '&' : '?';
-      const url = `${this.gasUrl}${separator}${query.toString()}`;
+      const url = `${this.gasUrl}?${query.toString()}`;
       const options: RequestInit = {
         method,
-        headers: {
-          'Content-Type': 'text/plain;charset=utf-8' // GAS accepts text/plain to avoid pre-flight CORS blocks
-        },
-        redirect: 'follow'
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin'
       };
 
       if (method === 'POST') {
         options.body = JSON.stringify({ action, ...(data || {}) });
       }
 
+      // Browser -> same-origin Vercel API -> GAS. This avoids direct browser
+      // fetches to GAS, whose redirects trigger cross-origin CORS failures.
       const response = await fetch(url, options);
       if (!response.ok) {
         throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
@@ -173,14 +179,11 @@ class ApiClient {
 
   // --- Test Gas Connection ---
   public async testGasConnection(testUrl?: string): Promise<{ success: boolean; message: string; latencyMs?: number }> {
-    const targetUrl = testUrl || this.gasUrl;
-    if (!targetUrl) {
-      return { success: false, message: 'URL Google Apps Script belum dimasukkan' };
-    }
-
+    // Ping through the same-origin proxy. GAS_API_URL is configured server-side.
+    const targetUrl = '/api/gas?action=ping';
     const start = performance.now();
     try {
-      const resp = await fetch(`${targetUrl}?action=ping`, { redirect: 'follow' });
+      const resp = await fetch(targetUrl, { credentials: 'same-origin' });
       const latencyMs = Math.round(performance.now() - start);
       if (resp.ok) {
         const json = await resp.json();
@@ -773,14 +776,16 @@ class ApiClient {
   public saveSettings(settings: Partial<AppSettings>): void {
     const current = this.getSettings();
     const updated = { ...current, ...settings };
+    // Pengaturan preferensi UI boleh lokal, tetapi URL backend tidak diubah
+    // melalui penyimpanan lokal. Endpoint harus dikonfigurasi saat build.
+    delete (updated as any).gas_endpoint_url;
     localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(updated));
-    if (settings.gas_endpoint_url !== undefined) {
-      this.setGasUrl(settings.gas_endpoint_url);
-    }
   }
 
   public getTestMailbox(): any[] {
-    return JSON.parse(localStorage.getItem(STORAGE_KEYS.TEST_MAILBOX) || '[]');
+    // Tidak ada mailbox OTP simulasi di frontend. OTP hanya dikirim dan
+    // diverifikasi oleh backend GAS.
+    return [];
   }
 
   // --- Zero-Hardcoded Site Configuration & Branding CMS API ---
