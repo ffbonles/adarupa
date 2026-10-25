@@ -452,7 +452,72 @@ class ApiClient {
     }
 
     if (this.isUsingLiveGas()) {
-      return this.callGas('verifyAdminOtp', 'POST', { email, otp });
+      // The GAS backend returns session fields in camelCase:
+      // adminId, displayName, expiresAt (milliseconds).
+      // The frontend session model expects snake_case and an ISO expiry.
+      // Persist the verified backend session BEFORE App.tsx navigates,
+      // because navigate() recalculates isAdminLoggedIn from getActiveSession().
+      const response = await this.callGas<any>('verifyAdminOtp', 'POST', { email, otp });
+
+      if (!response || response.success !== true || !response.data?.session) {
+        return response as ApiResponse<{ session: AdminSession }>;
+      }
+
+      const backendSession = response.data.session;
+      const expiresRaw = backendSession.expiresAt ?? backendSession.expires_at;
+      let expiresAt: string;
+
+      if (typeof expiresRaw === 'number' || (typeof expiresRaw === 'string' && /^\\d+$/.test(expiresRaw))) {
+        expiresAt = new Date(Number(expiresRaw)).toISOString();
+      } else if (typeof expiresRaw === 'string' && expiresRaw.trim()) {
+        expiresAt = new Date(expiresRaw).toISOString();
+      } else {
+        return {
+          success: false,
+          data: null,
+          error: {
+            code: 'INVALID_SESSION_RESPONSE',
+            message: 'Backend berhasil memverifikasi OTP, tetapi data masa berlaku sesi tidak lengkap.'
+          }
+        };
+      }
+
+      if (!Number.isFinite(new Date(expiresAt).getTime()) || new Date(expiresAt).getTime() <= Date.now()) {
+        return {
+          success: false,
+          data: null,
+          error: {
+            code: 'INVALID_SESSION_RESPONSE',
+            message: 'Backend mengembalikan sesi yang sudah kedaluwarsa atau tidak valid.'
+          }
+        };
+      }
+
+      const session: AdminSession = {
+        token: String(backendSession.token || ''),
+        admin_id: String(backendSession.admin_id ?? backendSession.adminId ?? ''),
+        email: String(backendSession.email || email).trim().toLowerCase(),
+        display_name: String(backendSession.display_name ?? backendSession.displayName ?? ''),
+        role: String(backendSession.role || ''),
+        expires_at: expiresAt
+      };
+
+      if (!session.token || !session.admin_id || !session.email) {
+        return {
+          success: false,
+          data: null,
+          error: {
+            code: 'INVALID_SESSION_RESPONSE',
+            message: 'Sesi backend tidak lengkap. Periksa respons AuthService.verifyOtp().'
+          }
+        };
+      }
+
+      localStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(session));
+      return {
+        success: true,
+        data: { session }
+      };
     }
 
     const cleanEmail = email.trim().toLowerCase();
