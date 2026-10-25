@@ -918,23 +918,65 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                   <label className="font-semibold text-[#292522]">Durasi (Detik)</label>
                   <input
                     type="number"
-                    value={editingContent.duration_seconds || 600}
+                    min="0"
+                    value={editingContent.duration_seconds ?? 0}
                     onChange={(e) => setEditingContent({ ...editingContent, duration_seconds: parseInt(e.target.value, 10) || 0 })}
                     className="w-full p-2.5 bg-[#F8F3E9] border border-[#E5DED2] rounded-xl text-xs text-[#292522]"
                   />
                 </div>
-
                 <div className="space-y-1">
-                  <label className="font-semibold text-[#292522]">ID Berkas Google Drive (Opsional)</label>
+                  <label className="font-semibold text-[#292522]">Tautan Media (video/audio/gambar)</label>
+                  <input
+                    type="url"
+                    value={editingContent.media_url || ''}
+                    onChange={(e) => setEditingContent({ ...editingContent, media_url: e.target.value })}
+                    placeholder="https://youtu.be/... atau URL file publik"
+                    className="w-full p-2.5 bg-[#F8F3E9] border border-[#E5DED2] rounded-xl text-xs text-[#292522]"
+                  />
+                  <p className="text-[11px] text-[#6D675F]">Tempel URL sumber. Video YouTube akan diputar melalui embed; URL file langsung harus bisa diakses publik.</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="font-semibold text-[#292522]">URL Thumbnail / Sampul (opsional)</label>
+                  <input
+                    type="url"
+                    value={editingContent.cover_url || ''}
+                    onChange={(e) => setEditingContent({ ...editingContent, cover_url: e.target.value })}
+                    placeholder="https://.../thumbnail.jpg"
+                    className="w-full p-2.5 bg-[#F8F3E9] border border-[#E5DED2] rounded-xl text-xs text-[#292522]"
+                  />
+                  <p className="text-[11px] text-[#6D675F]">Gunakan URL gambar langsung. Jika kosong, thumbnail YouTube akan dicoba otomatis.</p>
+                </div>
+                <div className="space-y-1">
+                  <label className="font-semibold text-[#292522]">ID Berkas Google Drive (opsional)</label>
                   <input
                     type="text"
                     value={editingContent.drive_file_id || ''}
                     onChange={(e) => setEditingContent({ ...editingContent, drive_file_id: e.target.value })}
-                    placeholder="1aB2c3D4e5F6..."
+                    placeholder="ID file Drive (bukan URL folder)"
                     className="w-full p-2.5 bg-[#F8F3E9] border border-[#E5DED2] rounded-xl text-xs text-[#292522] font-mono"
                   />
                 </div>
               </div>
+
+              {(() => {
+                const source = String(editingContent.media_url || '').trim();
+                const cover = String(editingContent.cover_url || '').trim();
+                const yt = source.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?.*v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/i);
+                const drive = String(editingContent.drive_file_id || '').trim();
+                const preview = cover || (yt ? `https://i.ytimg.com/vi/${yt[1]}/hqdefault.jpg` : (drive ? `https://drive.google.com/thumbnail?id=${encodeURIComponent(drive)}&sz=w800` : ''));
+                return preview ? (
+                  <div className="rounded-xl border border-[#E5DED2] bg-[#FCFAF5] p-3 space-y-2">
+                    <span className="font-semibold text-[#292522]">Pratinjau thumbnail</span>
+                    <img src={preview} alt="Pratinjau thumbnail konten" className="max-h-48 w-auto max-w-full rounded-lg object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                    <a href={preview} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[#800020] underline">Buka gambar <ExternalLink className="w-3 h-3" /></a>
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-[#6D675F]">Pratinjau muncul setelah URL sampul, URL YouTube, atau ID file Drive diisi.</p>
+                );
+              })()}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
