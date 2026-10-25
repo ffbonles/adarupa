@@ -3,7 +3,6 @@ import { Headphones, Search, Play, ListMusic, Disc, Sparkles } from 'lucide-reac
 import { ContentCard } from '../components/cards/ContentCard';
 import { ContentItem, Subcategory, Series } from '../types';
 import { api } from '../services/apiClient';
-import { INITIAL_SERIES } from '../data/culturalData';
 import { useSiteConfig } from '../services/SiteConfigContext';
 
 interface GemaSwaraPageProps {
@@ -64,6 +63,22 @@ export const GemaSwaraPage: React.FC<GemaSwaraPageProps> = ({
     }
   });
 
+  const seriesList = Object.values(
+    items.reduce<Record<string, { series_id: string; title: string; description: string; total_episodes: number }>>((groups, item) => {
+      if (!item.series_id) return groups;
+      if (!groups[item.series_id]) {
+        groups[item.series_id] = {
+          series_id: item.series_id,
+          title: item.series_title || item.title,
+          description: item.description || '',
+          total_episodes: 0
+        };
+      }
+      groups[item.series_id].total_episodes += 1;
+      return groups;
+    }, {})
+  );
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-6 sm:space-y-8">
       {/* Editorial Header Banner */}
@@ -96,7 +111,12 @@ export const GemaSwaraPage: React.FC<GemaSwaraPageProps> = ({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {INITIAL_SERIES.map((ser) => {
+          {seriesList.length === 0 && (
+            <p className="col-span-full rounded-xl border border-dashed p-6 text-sm text-[var(--color-muted-text,#6D675F)]">
+              Belum ada seri audio yang tersedia dari backend.
+            </p>
+          )}
+          {seriesList.map((ser) => {
             const seriesEpisodes = seriesGroups[ser.series_id] || [];
             return (
               <div
