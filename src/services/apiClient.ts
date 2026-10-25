@@ -42,8 +42,24 @@ class ApiClient {
   private gasUrl: string = '';
 
   constructor() {
-    this.initStorage();
-    this.gasUrl = localStorage.getItem(STORAGE_KEYS.GAS_URL) || (import.meta as any).env?.VITE_GAS_API_URL || '';
+    const isProduction = Boolean((import.meta as any).env?.PROD);
+
+    if (isProduction) {
+      // Production source of truth is GAS via the same-origin Vercel proxy.
+      // Ignore stale URLs stored by older frontend versions.
+      this.gasUrl = '/api/gas';
+      try {
+        localStorage.setItem(STORAGE_KEYS.GAS_URL, this.gasUrl);
+      } catch (_) {
+        // API requests still use /api/gas if localStorage is unavailable.
+      }
+    } else {
+      this.gasUrl =
+        localStorage.getItem(STORAGE_KEYS.GAS_URL) ||
+        (import.meta as any).env?.VITE_GAS_API_URL ||
+        '';
+      this.initStorage();
+    }
   }
 
   private initStorage() {
@@ -105,107 +121,98 @@ class ApiClient {
   }
 
   public setGasUrl(url: string): void {
-    this.gasUrl = url.trim();
+    const isProduction = Boolean((import.meta as any).env?.PROD);
+    this.gasUrl = isProduction ? '/api/gas' : url.trim();
     localStorage.setItem(STORAGE_KEYS.GAS_URL, this.gasUrl);
   }
 
   public isUsingLiveGas(): boolean {
-    return Boolean(this.gasUrl && this.gasUrl.startsWith('https://script.google.com/macros/s/'));
+    if (Boolean((import.meta as any).env?.PROD)) return true;
+    return Boolean(
+      this.gasUrl &&
+      (
+        this.gasUrl.startsWith('/api/gas') ||
+        this.gasUrl.startsWith('https://script.google.com/macros/s/')
+      )
+    );
   }
 
-  /**
-   * Normalize media URLs returned by GAS.
-   * Accepts raw URLs and Markdown links accidentally stored in Sheets.
-   * Google Drive /file/d/{id}/view links are converted to an image thumbnail URL.
-   * The Drive file must be shared with "Anyone with the link — Viewer".
-   */
-  private normalizeMediaUrl(value: unknown): string {
-    if (typeof value !== 'string') return '';
-    let url = value.trim();
-    if (!url) return '';
-
-    // If a Markdown link was pasted into a spreadsheet cell, keep its target URL.
-    const markdown = url.match(/^\[([^\]]*)\]\((https?:\/\/[^)]+)\)$/i);
-    if (markdown) url = markdown[2].trim();
-
-    // Convert common Google Drive file links to a direct image thumbnail endpoint.
-    const driveIdMatch =
-      url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/i) ||
-      url.match(/[?&]id=([a-zA-Z0-9_-]+)/i) ||
-      url.match(/drive\.google\.com\/thumbnail\?id=([a-zA-Z0-9_-]+)/i);
-
-    if (driveIdMatch && /(^|\.)drive\.google\.com\//i.test(url)) {
-      return `https://drive.google.com/thumbnail?id=${encodeURIComponent(driveIdMatch[1])}&sz=w1200`;
-    }
-
-    return url;
-  }
-
-  private normalizeMediaResponse<T>(value: T): T {
-    const visit = (item: any): any => {
-      if (Array.isArray(item)) return item.map(visit);
-      if (!item || typeof item !== 'object') return item;
-
-      const result: Record<string, any> = {};
-      for (const [key, child] of Object.entries(item)) {
-        result[key] = visit(child);
-      }
-
-      // Only normalize fields used by content/media objects.
-      if (typeof result.cover_url === 'string') {
-        result.cover_url = this.normalizeMediaUrl(result.cover_url);
-      }
-      if (typeof result.media_url === 'string') {
-        result.media_url = this.normalizeMediaUrl(result.media_url);
-      }
-
-      // If cover_url was a Drive file link and drive_file_id is empty, recover its ID.
-      if ((!result.drive_file_id || !String(result.drive_file_id).trim()) &&
-          typeof result.cover_url === 'string') {
-        const match = result.cover_url.match(/[?&]id=([a-zA-Z0-9_-]+)/i);
-        if (match && result.cover_url.includes('drive.google.com/thumbnail')) {
-          result.drive_file_id = match[1];
-        }
-      }
-      return result;
-    };
-
-    return visit(value) as T;
-  }
-
-  // --- Generic HTTP Transport to Google Apps Script ---
+  // --- Generic HTTP Transport to ADARUPA backend ---
   private async callGas<T>(action: string, method: 'GET' | 'POST' = 'GET', data?: any): Promise<ApiResponse<T>> {
     try {
-      let url = `${this.gasUrl}?action=${encodeURIComponent(action)}`;
+      const baseUrl = this.gasUrl || ((import.meta as any).env?.PROD ? '/api/gas' : '');
+      if (!baseUrl) {
+        return {
+          success: false,
+          data: null,
+          error: {
+            code: 'BACKEND_NOT_CONFIGURED',
+            message: 'Backend ADARUPA belum dikonfigurasi. Data contoh lokal tidak digunakan sebagai pengganti.'
+          }
+        };
+      }
+
+      const url = new URL(baseUrl, window.location.origin);
+      url.searchParams.set('action', action);
+
       const options: RequestInit = {
         method,
-        headers: {
-          'Content-Type': 'text/plain;charset=utf-8' // GAS accepts text/plain to avoid pre-flight CORS blocks
-        },
+        headers: { Accept: 'application/json' },
+        cache: 'no-store',
         redirect: 'follow'
       };
 
-      if (method === 'POST') {
-        options.body = JSON.stringify({ action, ...data });
+      if (method === 'GET' && data && typeof data === 'object') {
+        Object.entries(data).forEach(([key, value]) => {
+          if (value === undefined || value === null || typeof value === 'object') return;
+          // Router.gs expects q for search filters.
+          const queryKey = key === 'search' ? 'q' : key;
+          url.searchParams.set(queryKey, String(value));
+        });
+      } else if (method === 'POST') {
+        options.headers = {
+          Accept: 'application/json',
+          'Content-Type': 'text/plain;charset=utf-8'
+        };
+        options.body = JSON.stringify({ ...(data || {}), action });
       }
 
-      const response = await fetch(url, options);
+      const response = await fetch(url.toString(), options);
+      const responseText = await response.text();
+      let json: any;
+
+      try {
+        json = JSON.parse(responseText);
+      } catch (_) {
+        return {
+          success: false,
+          data: null,
+          error: {
+            code: 'BACKEND_INVALID_RESPONSE',
+            message: `Backend ADARUPA mengembalikan respons bukan JSON (HTTP ${response.status}, ${response.headers.get('content-type') || 'tipe konten tidak diketahui'}). Data lokal tidak digunakan.`
+          }
+        };
+      }
+
       if (!response.ok) {
-        throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
+        return {
+          success: false,
+          data: null,
+          error: {
+            code: json?.error?.code || 'BACKEND_HTTP_ERROR',
+            message: json?.error?.message || `Permintaan backend gagal (HTTP ${response.status}).`
+          }
+        };
       }
 
-      const json = await response.json();
-      if (json && json.success === true && json.data !== undefined) {
-        json.data = this.normalizeMediaResponse(json.data);
-      }
-      return json;
+      return json as ApiResponse<T>;
     } catch (err: any) {
       return {
         success: false,
         data: null,
         error: {
-          code: 'GAS_REQUEST_FAILED',
-          message: err.message || 'Koneksi ke Google Apps Script gagal'
+          code: 'BACKEND_REQUEST_FAILED',
+          message: err?.message || 'Koneksi ke backend ADARUPA gagal. Data lokal tidak digunakan.'
         }
       };
     }
@@ -213,7 +220,7 @@ class ApiClient {
 
   // --- Test Gas Connection ---
   public async testGasConnection(testUrl?: string): Promise<{ success: boolean; message: string; latencyMs?: number }> {
-    const targetUrl = testUrl || this.gasUrl;
+    const targetUrl = testUrl || this.gasUrl || ((import.meta as any).env?.PROD ? '/api/gas' : '');
     if (!targetUrl) {
       return { success: false, message: 'URL Google Apps Script belum dimasukkan' };
     }
