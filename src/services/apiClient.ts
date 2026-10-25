@@ -42,12 +42,8 @@ class ApiClient {
   private gasUrl: string = '';
 
   constructor() {
-    // Browser hanya memanggil endpoint same-origin Vercel (/api/gas).
-    // URL GAS asli disimpan sebagai environment variable server GAS_API_URL.
-    this.gasUrl = '/api/gas';
-
-    // Sengaja tidak menjalankan initStorage(). Frontend tidak membuat atau
-    // mengisi database konten dummy di localStorage.
+    this.initStorage();
+    this.gasUrl = localStorage.getItem(STORAGE_KEYS.GAS_URL) || (import.meta as any).env?.VITE_GAS_API_URL || '';
   }
 
   private initStorage() {
@@ -109,61 +105,99 @@ class ApiClient {
   }
 
   public setGasUrl(url: string): void {
-    // URL GAS dikelola di Vercel Project Settings, bukan dari browser.
-    // Metode dipertahankan untuk kompatibilitas dengan komponen admin lama.
-    const cleanUrl = url.trim();
-    if (cleanUrl !== '/api/gas' && !cleanUrl.startsWith('https://script.google.com/macros/s/')) {
-      throw new Error('Endpoint backend tidak valid.');
-    }
-    this.gasUrl = '/api/gas';
+    this.gasUrl = url.trim();
+    localStorage.setItem(STORAGE_KEYS.GAS_URL, this.gasUrl);
   }
 
   public isUsingLiveGas(): boolean {
-    // Mode fixture/local dimatikan secara permanen. Jika URL backend salah,
-    // permintaan harus gagal dengan error koneksi—jangan pernah jatuh ke data dummy.
-    return true;
+    return Boolean(this.gasUrl && this.gasUrl.startsWith('https://script.google.com/macros/s/'));
+  }
+
+  /**
+   * Normalize media URLs returned by GAS.
+   * Accepts raw URLs and Markdown links accidentally stored in Sheets.
+   * Google Drive /file/d/{id}/view links are converted to an image thumbnail URL.
+   * The Drive file must be shared with "Anyone with the link — Viewer".
+   */
+  private normalizeMediaUrl(value: unknown): string {
+    if (typeof value !== 'string') return '';
+    let url = value.trim();
+    if (!url) return '';
+
+    // If a Markdown link was pasted into a spreadsheet cell, keep its target URL.
+    const markdown = url.match(/^\[([^\]]*)\]\((https?:\/\/[^)]+)\)$/i);
+    if (markdown) url = markdown[2].trim();
+
+    // Convert common Google Drive file links to a direct image thumbnail endpoint.
+    const driveIdMatch =
+      url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/i) ||
+      url.match(/[?&]id=([a-zA-Z0-9_-]+)/i) ||
+      url.match(/drive\.google\.com\/thumbnail\?id=([a-zA-Z0-9_-]+)/i);
+
+    if (driveIdMatch && /(^|\.)drive\.google\.com\//i.test(url)) {
+      return `https://drive.google.com/thumbnail?id=${encodeURIComponent(driveIdMatch[1])}&sz=w1200`;
+    }
+
+    return url;
+  }
+
+  private normalizeMediaResponse<T>(value: T): T {
+    const visit = (item: any): any => {
+      if (Array.isArray(item)) return item.map(visit);
+      if (!item || typeof item !== 'object') return item;
+
+      const result: Record<string, any> = {};
+      for (const [key, child] of Object.entries(item)) {
+        result[key] = visit(child);
+      }
+
+      // Only normalize fields used by content/media objects.
+      if (typeof result.cover_url === 'string') {
+        result.cover_url = this.normalizeMediaUrl(result.cover_url);
+      }
+      if (typeof result.media_url === 'string') {
+        result.media_url = this.normalizeMediaUrl(result.media_url);
+      }
+
+      // If cover_url was a Drive file link and drive_file_id is empty, recover its ID.
+      if ((!result.drive_file_id || !String(result.drive_file_id).trim()) &&
+          typeof result.cover_url === 'string') {
+        const match = result.cover_url.match(/[?&]id=([a-zA-Z0-9_-]+)/i);
+        if (match && result.cover_url.includes('drive.google.com/thumbnail')) {
+          result.drive_file_id = match[1];
+        }
+      }
+      return result;
+    };
+
+    return visit(value) as T;
   }
 
   // --- Generic HTTP Transport to Google Apps Script ---
   private async callGas<T>(action: string, method: 'GET' | 'POST' = 'GET', data?: any): Promise<ApiResponse<T>> {
     try {
-      if (!this.gasUrl) {
-        throw new Error('URL Google Apps Script belum dikonfigurasi');
-      }
-
-      // GET harus menyertakan parameter di URL. Sebelumnya data GET diabaikan,
-      // sehingga categoryId, slug, pencarian, filter, dan pagination tidak terkirim.
-      const query = new URLSearchParams();
-      query.set('action', action);
-
-      if (method === 'GET' && data && typeof data === 'object') {
-        Object.keys(data).forEach((key) => {
-          const value = data[key];
-          if (value !== undefined && value !== null && value !== '') {
-            query.set(key, String(value));
-          }
-        });
-      }
-
-      const url = `${this.gasUrl}?${query.toString()}`;
+      let url = `${this.gasUrl}?action=${encodeURIComponent(action)}`;
       const options: RequestInit = {
         method,
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin'
+        headers: {
+          'Content-Type': 'text/plain;charset=utf-8' // GAS accepts text/plain to avoid pre-flight CORS blocks
+        },
+        redirect: 'follow'
       };
 
       if (method === 'POST') {
-        options.body = JSON.stringify({ action, ...(data || {}) });
+        options.body = JSON.stringify({ action, ...data });
       }
 
-      // Browser -> same-origin Vercel API -> GAS. This avoids direct browser
-      // fetches to GAS, whose redirects trigger cross-origin CORS failures.
       const response = await fetch(url, options);
       if (!response.ok) {
         throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
       }
 
       const json = await response.json();
+      if (json && json.success === true && json.data !== undefined) {
+        json.data = this.normalizeMediaResponse(json.data);
+      }
       return json;
     } catch (err: any) {
       return {
@@ -179,11 +213,14 @@ class ApiClient {
 
   // --- Test Gas Connection ---
   public async testGasConnection(testUrl?: string): Promise<{ success: boolean; message: string; latencyMs?: number }> {
-    // Ping through the same-origin proxy. GAS_API_URL is configured server-side.
-    const targetUrl = '/api/gas?action=ping';
+    const targetUrl = testUrl || this.gasUrl;
+    if (!targetUrl) {
+      return { success: false, message: 'URL Google Apps Script belum dimasukkan' };
+    }
+
     const start = performance.now();
     try {
-      const resp = await fetch(targetUrl, { credentials: 'same-origin' });
+      const resp = await fetch(`${targetUrl}?action=ping`, { redirect: 'follow' });
       const latencyMs = Math.round(performance.now() - start);
       if (resp.ok) {
         const json = await resp.json();
@@ -452,72 +489,7 @@ class ApiClient {
     }
 
     if (this.isUsingLiveGas()) {
-      // The GAS backend returns session fields in camelCase:
-      // adminId, displayName, expiresAt (milliseconds).
-      // The frontend session model expects snake_case and an ISO expiry.
-      // Persist the verified backend session BEFORE App.tsx navigates,
-      // because navigate() recalculates isAdminLoggedIn from getActiveSession().
-      const response = await this.callGas<any>('verifyAdminOtp', 'POST', { email, otp });
-
-      if (!response || response.success !== true || !response.data?.session) {
-        return response as ApiResponse<{ session: AdminSession }>;
-      }
-
-      const backendSession = response.data.session;
-      const expiresRaw = backendSession.expiresAt ?? backendSession.expires_at;
-      let expiresAt: string;
-
-      if (typeof expiresRaw === 'number' || (typeof expiresRaw === 'string' && /^\d+$/.test(expiresRaw))) {
-        expiresAt = new Date(Number(expiresRaw)).toISOString();
-      } else if (typeof expiresRaw === 'string' && expiresRaw.trim()) {
-        expiresAt = new Date(expiresRaw).toISOString();
-      } else {
-        return {
-          success: false,
-          data: null,
-          error: {
-            code: 'INVALID_SESSION_RESPONSE',
-            message: 'Backend berhasil memverifikasi OTP, tetapi data masa berlaku sesi tidak lengkap.'
-          }
-        };
-      }
-
-      if (!Number.isFinite(new Date(expiresAt).getTime()) || new Date(expiresAt).getTime() <= Date.now()) {
-        return {
-          success: false,
-          data: null,
-          error: {
-            code: 'INVALID_SESSION_RESPONSE',
-            message: 'Backend mengembalikan sesi yang sudah kedaluwarsa atau tidak valid.'
-          }
-        };
-      }
-
-      const session: AdminSession = {
-        token: String(backendSession.token || ''),
-        admin_id: String(backendSession.admin_id ?? backendSession.adminId ?? ''),
-        email: String(backendSession.email || email).trim().toLowerCase(),
-        display_name: String(backendSession.display_name ?? backendSession.displayName ?? ''),
-        role: String(backendSession.role || ''),
-        expires_at: expiresAt
-      };
-
-      if (!session.token || !session.admin_id || !session.email) {
-        return {
-          success: false,
-          data: null,
-          error: {
-            code: 'INVALID_SESSION_RESPONSE',
-            message: 'Sesi backend tidak lengkap. Periksa respons AuthService.verifyOtp().'
-          }
-        };
-      }
-
-      localStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(session));
-      return {
-        success: true,
-        data: { session }
-      };
+      return this.callGas('verifyAdminOtp', 'POST', { email, otp });
     }
 
     const cleanEmail = email.trim().toLowerCase();
@@ -841,16 +813,14 @@ class ApiClient {
   public saveSettings(settings: Partial<AppSettings>): void {
     const current = this.getSettings();
     const updated = { ...current, ...settings };
-    // Pengaturan preferensi UI boleh lokal, tetapi URL backend tidak diubah
-    // melalui penyimpanan lokal. Endpoint harus dikonfigurasi saat build.
-    delete (updated as any).gas_endpoint_url;
     localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(updated));
+    if (settings.gas_endpoint_url !== undefined) {
+      this.setGasUrl(settings.gas_endpoint_url);
+    }
   }
 
   public getTestMailbox(): any[] {
-    // Tidak ada mailbox OTP simulasi di frontend. OTP hanya dikirim dan
-    // diverifikasi oleh backend GAS.
-    return [];
+    return JSON.parse(localStorage.getItem(STORAGE_KEYS.TEST_MAILBOX) || '[]');
   }
 
   // --- Zero-Hardcoded Site Configuration & Branding CMS API ---
