@@ -126,6 +126,23 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
+  // YouTube URLs must use the provider embed player, not an HTML5 <video> source.
+  const youtubeMatch = String(mediaUrl || '').match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?.*v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/i);
+  if (youtubeMatch && youtubeMatch[1]) {
+    return (
+      <div className={`relative aspect-video w-full bg-black rounded-xl overflow-hidden border border-[#E5DED2] shadow-lg ${className}`}>
+        <iframe
+          src={`https://www.youtube-nocookie.com/embed/${youtubeMatch[1]}`}
+          title={title}
+          className="w-full h-full border-0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          referrerPolicy="strict-origin-when-cross-origin"
+          allowFullScreen
+        />
+      </div>
+    );
+  }
+
   // Google Drive Embedded Previewer
   if (useDriveIframe && driveFileId) {
     const drivePreviewUrl = `https://drive.google.com/file/d/${driveFileId}/preview`;
