@@ -138,9 +138,13 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({ onSuccess, onBac
       const res = await api.verifyAdminOtp(emailForVerification, otp);
       if (res.success && res.data) {
         setMessage('Verifikasi berhasil! Mengalihkan ke dasbor...');
-        setTimeout(() => {
+        // Persisted backend session should already be written by api.verifyAdminOtp.
+        // Use a full navigation as a fallback to avoid a stale SPA route/state
+        // leaving the user on the OTP form after a successful backend response.
+        window.setTimeout(() => {
           onSuccess();
-        }, 600);
+          window.location.assign('/admin/dashboard');
+        }, 300);
       } else {
         setErrorMessage(res.error?.message || 'Kode OTP tidak cocok.');
       }
